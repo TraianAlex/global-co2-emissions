@@ -8,9 +8,7 @@ import {
   Sphere,
   Graticule,
 } from 'react-simple-maps';
-
-const geoUrl =
-  'https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json';
+import { geoUrl, rounded } from './utils';
 
 const MapChart = ({ setTooltipContent }) => {
   const [data, setData] = useState([]);
@@ -35,10 +33,42 @@ const MapChart = ({ setTooltipContent }) => {
       '#782618',
     ]);
 
+  const getGeoData = (geo) =>
+    data.find((s) => s.iso_code === geo.properties.ISO_A3 && s.year === '1950');
+
+  const setTooltip = (d) =>
+    d
+      ? setTooltipContent(
+          `<p>${d?.country} <strong>${
+            d?.year
+          }</strong></p><p>CO2 Emissions - <strong>${
+            d?.co2
+          }</strong></p><p>Population - <strong>${rounded(
+            d?.population,
+          )}</strong></p>`,
+        )
+      : '';
+
+  const defaultStyle = (d) => ({
+    default: {
+      fill: d ? colorScale(d.co2) : '#F5F4F6',
+      outline: 'none',
+    },
+    hover: {
+      fill: '#F53',
+      outline: 'none',
+    },
+    pressed: {
+      fill: '#E42',
+      outline: 'none',
+    },
+  });
+
   return (
     <ComposableMap
       data-tip=""
       data-type="info"
+      data-html={true}
       projectionConfig={{
         rotate: [-10, 0, 0],
         scale: 130,
@@ -50,37 +80,15 @@ const MapChart = ({ setTooltipContent }) => {
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
             geographies.map((geo) => {
-              const d = data.find(
-                (s) =>
-                  s.iso_code === geo.properties.ISO_A3 && s.year === '1940',
-              );
+              const d = getGeoData(geo);
 
               return (
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  onMouseEnter={() =>
-                    d
-                      ? setTooltipContent(
-                          `${d?.country} ${d?.year} CO2 Emissions ${d?.co2}`,
-                        )
-                      : ''
-                  }
+                  onMouseEnter={() => setTooltip(d)}
                   onMouseLeave={() => setTooltipContent('')}
-                  style={{
-                    default: {
-                      fill: d ? colorScale(d.co2) : '#F5F4F6',
-                      outline: 'none',
-                    },
-                    hover: {
-                      fill: '#F53',
-                      outline: 'none',
-                    },
-                    pressed: {
-                      fill: '#E42',
-                      outline: 'none',
-                    },
-                  }}
+                  style={defaultStyle(d)}
                 />
               );
             })
